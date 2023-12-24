@@ -4,40 +4,31 @@ using FluentAssertions;
 
 namespace FluentAssertions.JsonEquivalent;
 
-public static class JsonCompare
+internal static class JsonTokenStreamCompare
 {
+    private const int CharCountBeforeError = 14;
+    private const int CharCountAfterError = 150;
     private static readonly JsonComparatorOptions DefaultOptions = new();
 
-    public static JsonCompareError? IsJsonEquivalent(string actual, string expected, JsonComparatorOptions? options = null)
+    internal static string? IsJsonTokenEquivalent(string actual, string expected, JsonComparatorOptions? options = null)
     {
         var actualBytes = System.Text.Encoding.UTF8.GetBytes(actual);
         var expectedBytes = System.Text.Encoding.UTF8.GetBytes(expected);
-        return IsJsonEquivalent(actualBytes, expectedBytes, options);
+        return IsJsonTokenEquivalent(actualBytes, expectedBytes, options);
     }
 
-    public static JsonCompareError? IsJsonEquivalent(byte[] actualBytes, byte[] expectedBytes, JsonComparatorOptions? options = null)
+    internal static string? IsJsonTokenEquivalent(byte[] actualBytes, byte[] expectedBytes, JsonComparatorOptions? options = null)
     {
         options ??= DefaultOptions;
         var actual = new Utf8JsonReader(actualBytes, options.Value);
         var expected = new Utf8JsonReader(expectedBytes, options.Value);
-        var comparisonResult = CompareReaders(ref actual, actualBytes, ref expected, expectedBytes, options.Value);
-        if (comparisonResult is not null)
-        {
-            return comparisonResult;
-        }
-
-        if (actual.Read() == false && expected.Read() == false)
-        {
-            return null;
-        }
-
-        return CreateErrorMessage("end of stream mismatch", ref actual, actualBytes, ref expected, expectedBytes);
+        var comparisonResult = CompareReaders(ref actual, actualBytes, ref expected, expectedBytes);
+        return comparisonResult;
     }
 
-    private static JsonCompareError? CompareReaders(ref Utf8JsonReader actual, byte[] actualBytes,
-        ref Utf8JsonReader expected, byte[] expectedBytes, JsonComparatorOptions options)
+    private static string? CompareReaders(ref Utf8JsonReader actual, byte[] actualBytes,
+        ref Utf8JsonReader expected, byte[] expectedBytes)
     {
-        int depth = 0;
         while (actual.Read() && expected.Read())
         {
             if (actual.TokenType != expected.TokenType)
@@ -49,24 +40,7 @@ public static class JsonCompare
             {
                 // Ignore tokens without value
                 case JsonTokenType.StartObject:
-                    depth++;
-                    if (options.LooseObjectOrderComparison)
-                    {
-                        var objectCompareResult = CompareObjectIgnoreOrder(ref actual, actualBytes, ref expected, expectedBytes, options);
-                        if (objectCompareResult is not null)
-                        {
-                            return objectCompareResult;
-                        }
-                    }
-
-                    break;
                 case JsonTokenType.EndObject:
-                    if (depth-- == 0)
-                    {
-                        return null;
-                    }
-
-                    break;
                 case JsonTokenType.None:
                 case JsonTokenType.StartArray:
                 case JsonTokenType.EndArray:
@@ -74,11 +48,12 @@ public static class JsonCompare
                 case JsonTokenType.False:
                 case JsonTokenType.Null:
                     break;
+
                 // compare the value of tokens with value
                 case JsonTokenType.PropertyName:
                     if (!actual.ValueTextEquals(expected.ValueSpan))
                     {
-                        return CreateErrorMessage("PropertyName mismatch", ref actual, actualBytes, ref expected,
+                        return CreateErrorMessage("PropertyName mismatch (validate strict order)", ref actual, actualBytes, ref expected,
                             expectedBytes);
                     }
 
@@ -110,100 +85,38 @@ public static class JsonCompare
         return null;
     }
 
-    private static JsonCompareError CreateErrorMessage(string message, ref Utf8JsonReader actual, ReadOnlySpan<byte> actualBytes,
+    private static string? CreateErrorMessage(string message, ref Utf8JsonReader actual, ReadOnlySpan<byte> actualBytes,
         ref Utf8JsonReader expected, ReadOnlySpan<byte> expectedBytes)
     {
-        return new JsonCompareError(message, GetRelevantErrorPart(ref actual, actualBytes),
-            GetRelevantErrorPart(ref expected, expectedBytes), "               ^");
+        var actualCharacterPositionError = Encoding.UTF8.GetCharCount(actualBytes.Slice(0, (int)actual.TokenStartIndex)); // might be less than pos if there are multi byte characters
+        var expectedCharacterPositionError = Encoding.UTF8.GetCharCount(expectedBytes.Slice(0, (int)expected.TokenStartIndex)); // might be less than pos if there are multi byte characters
+
+        return $"""
+
+                {message}
+                {GetRelevantErrorPart((int)actual.TokenStartIndex, actualBytes)} (diff at index {actualCharacterPositionError})
+                {GetRelevantErrorPart((int)expected.TokenStartIndex, expectedBytes)} (diff at index {expectedCharacterPositionError})
+                {"^", CharCountBeforeError + 1}
+
+                """;
     }
 
-    private static string GetRelevantErrorPart(ref Utf8JsonReader reader, ReadOnlySpan<byte> bytes)
-    {                      
-        var pos = reader.TokenStartIndex;
-        // utf-8 is a variable length encoding, so we need to find the start of a char for a split
-        var startPos = (int)Math.Max(0, pos - 15);
-        while((bytes[startPos] & 0xC0) == 0x80)
-        {
-            startPos--;
-        }
+    private static readonly Regex RemoveNewlinesAndIndetionRegex = new Regex(@"\r?\n\s*", RegexOptions.Compiled);
 
-        // Take about 75 characters (less if there are multibyte characters)
-        var length = Math.Min(75, bytes.Length - startPos - 1);
-        while ((bytes[startPos + length] & 0xC0) == 0x80)
-        {
-            length--;
-        }
-        
-        return $"{System.Text.Encoding.UTF8.GetCharCount(bytes.Slice(0,(int)reader.TokenStartIndex))} {System.Text.Encoding.UTF8.GetString(bytes.Slice(startPos, length))}";
-    }
-
-    private static JsonCompareError? CompareObjectIgnoreOrder(ref Utf8JsonReader actual, byte[] actualBytes,  ref Utf8JsonReader expected, byte[] expectedBytes, JsonComparatorOptions options)
+    private static string GetRelevantErrorPart(int pos, ReadOnlySpan<byte> bytes)
     {
-        var cacheActual = new Dictionary<string, ReadOnlyMemory<byte>>();
-        actual.Read();
-        expected.Read();
-        while (true)
-        {
-            switch ((actual.TokenType, expected.TokenType))
-            {
-                case (JsonTokenType.EndObject, JsonTokenType.EndObject):
-                    return cacheActual.Count == 0 ? null : CreateErrorMessage("Different counts", ref actual, actualBytes, ref expected, expectedBytes);
-                case (JsonTokenType.EndObject, JsonTokenType.PropertyName):
-                case (JsonTokenType.PropertyName, JsonTokenType.EndObject):
-                    return CreateErrorMessage("Different property counts", ref actual, actualBytes, ref expected, expectedBytes);
-                case (JsonTokenType.PropertyName, JsonTokenType.PropertyName):
-                    break; // Everything else returns.
-                default:
-                    return CreateErrorMessage("Should not happen!", ref actual, actualBytes, ref expected, expectedBytes);
-            }
-            if (actual.ValueTextEquals(expected.ValueSpan))
-            {
-                // Properties actually match. Do the easy path.
-                actual.Read();
-                expected.Read();
-                var recursiveCompareResult =
-                    CompareReaders(ref actual, actualBytes, ref expected, expectedBytes, options);
-                if (recursiveCompareResult is not null)
-                {
-                    return recursiveCompareResult;
-                }
+        var startBeforePos = Math.Max(0, pos - (CharCountBeforeError * 3)); // take 3 times as many utf8 bytes than characters (might be multi byte characters, and we remove newlines and indentation)
+        var lengthAfterPos = Math.Min(CharCountAfterError * 3, bytes.Length - pos); // take 3 times as many utf8 bytes than characters
 
-                actual.Read();
-                expected.Read();
-            }
-            else
-            {
-                // read one property in actual into cache
-                var actualPropertyName = actual.GetString()!;
-                var propertyContent = GetPropertyContent(ref actual, actualBytes);
-                cacheActual.Add(actualPropertyName, propertyContent);
-            }
-        }
-    }
+        var beforeErrorString = Encoding.UTF8.GetString(bytes.Slice(startBeforePos, pos - startBeforePos));
+        beforeErrorString = RemoveNewlinesAndIndetionRegex.Replace(beforeErrorString, " ")
+            .PadLeft(CharCountBeforeError);
+        beforeErrorString = beforeErrorString.Substring(beforeErrorString.Length - CharCountBeforeError);
 
-    private static ReadOnlyMemory<byte> GetPropertyContent(ref Utf8JsonReader actual, byte[] actualBytes)
-    {
-        var start = (int)actual.TokenStartIndex;
-        ReadUntillObjectEnd(ref actual);
-        var end = (int)actual.TokenStartIndex;
+        var afterErrorString = Encoding.UTF8.GetString(bytes.Slice(pos, lengthAfterPos));
+        afterErrorString = RemoveNewlinesAndIndetionRegex.Replace(afterErrorString, " ");
+        afterErrorString = afterErrorString.Substring(0, Math.Min(afterErrorString.Length, CharCountAfterError));
 
-        return actualBytes.AsMemory(start, end - start);
-    }
-
-    private static void ReadUntillObjectEnd(ref Utf8JsonReader reader)
-    {
-        while (reader.Read())
-        {
-            switch (reader.TokenType)
-            {
-                case JsonTokenType.StartObject:
-                    ReadUntillObjectEnd(ref reader);
-                    break;
-                case JsonTokenType.EndObject:
-                    return;
-            }
-        }
-
-        throw new Exception("Something failed");
+        return beforeErrorString + afterErrorString;
     }
 }

@@ -5,31 +5,28 @@ using FluentAssertions.Execution;
 namespace FluentAssertions.JsonEquivalent;
 using FluentAssertions.Primitives;
 
-public static class JsonAssertionsExtentions
+public static class FluentAssertionsExtentions
 {
-    public static AndConstraint<StringAssertions> BeJsonTokenEquivalentTo(this StringAssertions actual, string expected,
-        JsonComparatorOptions? options = null)
-    {
-        var result = JsonCompareToken.IsJsonTokenEquivalent(actual.Subject, expected, options);
-
-        if (result is not null)
-        {
-            Execute.Assertion.FailWith("{0}\n{1}\n{2}\n{3}", result.message, result.expected, result.actual, result.posMark);
-        }
-
-
-        return new AndConstraint<StringAssertions>(actual);
-    }
     public static AndConstraint<StringAssertions> BeJsonEquivalentTo(this StringAssertions actual, string expected, JsonComparatorOptions? options = null)
     {
-       
-        var result = JsonCompare.IsJsonEquivalent(actual.Subject, expected, options);
-        
+        ArgumentNullException.ThrowIfNull(actual, "Cannot assert string containment against <null>.");
+
+        string? result;
+        if (options?.LooseObjectOrderComparison != true)
+        {
+            result = JsonTokenStreamCompare.IsJsonTokenEquivalent(actual.Subject, expected, options);
+        }
+        else
+        {
+            throw new NotSupportedException(); // Not implemented yet
+        }
+
         if (result is not null)
         {
-            Execute.Assertion.FailWith("{0}\n{1}\n{2}\n{3}", result.message, result.expected, result.actual, result.posMark);
+            Execute.Assertion
+                .FailWith(() => new FailReason("Expected {context:string} to match expected json, but found diff\n{0}", result));
         }
-        
+
         return new AndConstraint<StringAssertions>(actual);
     }
 }

@@ -2,17 +2,20 @@ using System.Text.Json;
 
 namespace FluentAssertions.JsonEquivalent;
 
-public readonly struct JsonComparatorOptions
+[StructLayout(LayoutKind.Auto)]
+public readonly struct JsonComparatorOptions : IEquatable<JsonComparatorOptions>
 {
     public JsonComparatorOptions()
     {
     }
 
-    public readonly JsonCommentHandling CommentHandling { get; init; } = JsonCommentHandling.Skip;
+    public JsonCommentHandling CommentHandling { get; init; } = JsonCommentHandling.Skip;
+
     public bool AllowTrailingCommas { get; init; } = true;
+
     public int MaxDepth { get; init; } = 64;
 
-    public bool LooseObjectOrderComparison { get; init; } = false;
+    public bool LooseObjectOrderComparison { get; init; }
 
     public static implicit operator JsonReaderOptions(JsonComparatorOptions options) => new JsonReaderOptions()
     {
@@ -21,4 +24,26 @@ public readonly struct JsonComparatorOptions
         MaxDepth = options.MaxDepth,
     };
 
+// Analyzers require all structs to implement equality.
+    public override bool Equals(object? obj)
+    {
+        return obj is JsonComparatorOptions other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine((int)CommentHandling, AllowTrailingCommas, MaxDepth, LooseObjectOrderComparison);
+    }
+
+    public static bool operator ==(JsonComparatorOptions left, JsonComparatorOptions right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(JsonComparatorOptions left, JsonComparatorOptions right)
+    {
+        return !(left == right);
+    }
+
+    public bool Equals(JsonComparatorOptions other) => CommentHandling == other.CommentHandling && AllowTrailingCommas == other.AllowTrailingCommas && MaxDepth == other.MaxDepth && LooseObjectOrderComparison == other.LooseObjectOrderComparison;
 }
