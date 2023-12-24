@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using FluentAssertions;
 
 namespace FluentAssertions.JsonEquivalent;
@@ -105,6 +107,9 @@ internal static class JsonTokenStreamCompare
 
     private static string GetRelevantErrorPart(int pos, ReadOnlySpan<byte> bytes)
     {
+        // To keep the index of the errors after decoding and removing newlines and indentation
+        // we need to take a split the string at the error position and remove newlines and indentation separately
+        // before concatenating
         var startBeforePos = Math.Max(0, pos - (CharCountBeforeError * 3)); // take 3 times as many utf8 bytes than characters (might be multi byte characters, and we remove newlines and indentation)
         var lengthAfterPos = Math.Min(CharCountAfterError * 3, bytes.Length - pos); // take 3 times as many utf8 bytes than characters
 
@@ -117,6 +122,6 @@ internal static class JsonTokenStreamCompare
         afterErrorString = RemoveNewlinesAndIndetionRegex.Replace(afterErrorString, " ");
         afterErrorString = afterErrorString.Substring(0, Math.Min(afterErrorString.Length, CharCountAfterError));
 
-        return beforeErrorString + afterErrorString;
+        return beforeErrorString + afterErrorString; // concatenate the strings and ensure the error mark is at pos CharCountBeforeError
     }
 }
