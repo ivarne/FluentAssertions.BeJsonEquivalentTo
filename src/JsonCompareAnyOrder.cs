@@ -1,4 +1,4 @@
-namespace JsonCompare;
+namespace FluentAssertions.JsonEquivalent;
 
 using System.Text.Json;
 

@@ -1,4 +1,4 @@
-namespace JsonCompare.Tests;
+namespace FluentAssertions.JsonEquivalent.Tests;
 
 
 public class TestJsonCompare

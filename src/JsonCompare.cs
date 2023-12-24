@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using FluentAssertions;
 
-namespace JsonCompare;
+namespace FluentAssertions.JsonEquivalent;
 
 public static class JsonCompare
 {

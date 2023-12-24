@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace JsonCompare.Tests;
+namespace FluentAssertions.JsonEquivalent.Tests;
 
 /// <summary>
 /// Simple tests to check how sliced multibyte UTF8 bytes are interpreted as strings.

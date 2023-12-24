@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace JsonCompare;
+namespace FluentAssertions.JsonEquivalent;
 
 public readonly struct JsonComparatorOptions
 {

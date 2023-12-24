@@ -2,7 +2,7 @@
 using FluentAssertions;
 using FluentAssertions.Execution;
 
-namespace JsonCompare;
+namespace FluentAssertions.JsonEquivalent;
 using FluentAssertions.Primitives;
 
 public static class JsonAssertionsExtentions
