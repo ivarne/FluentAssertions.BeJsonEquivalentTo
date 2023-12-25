@@ -1,5 +1,99 @@
-
 namespace FluentAssertions.JsonEquivalent.Tests;
+
+public class TheoryTests
+{
+    public class TestCase
+    {
+        public required string Name { get; set; }
+        public required string Actual { get; set; }
+        public required string Expected { get; set; }
+        public required bool Throws_Be { get; set; }
+        public required bool Throws_BeEquivalentTo { get; set; }
+        public required bool Throws_BeJsonEquivalentTo { get; set; }
+
+    }
+
+    public static IEnumerable<object[]> GetTestCases => new[]
+    {
+        new[]
+        {
+            new TestCase
+            {
+                Name = "TestBinaryEqual",
+                Actual =
+                    """{"name":"John", "number": 3.141592, "emptyArray":[], "array":[null, 1, 3.141592, "", "string", {}, {"t":null}]}""",
+                Expected =
+                    """{"name":"John", "number": 3.141592, "emptyArray":[], "array":[null, 1, 3.141592, "", "string", {}, {"t":null}]}""",
+                Throws_Be = false,
+                Throws_BeEquivalentTo = false,
+                Throws_BeJsonEquivalentTo = false
+            },
+        },
+        new[]
+        {
+            new TestCase
+            {
+                Name = "TestEncodingIndiferenceInValue",
+                Actual = """{"name":"O\u0027Reilly\uD83D\uDCDA"}""",
+                Expected = """{"name":"O'Reilly📚"}""",
+                Throws_Be = true,
+                Throws_BeEquivalentTo = true,
+                Throws_BeJsonEquivalentTo = false
+            },
+        },
+    };
+
+    [Theory]
+    [MemberData(nameof(GetTestCases))]
+    public void Test_BeEquivalentTo(TestCase testCase)
+    {
+        var action = () => testCase.Actual.Should().BeEquivalentTo(testCase.Expected);
+        if (testCase.Throws_BeEquivalentTo)
+        {
+            action
+                .Should()
+                .Throw<Xunit.Sdk.XunitException>();
+        }
+        else
+        {
+            action();
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(GetTestCases))]
+    public void Test_Be(TestCase testCase)
+    {
+        var action = () => testCase.Actual.Should().BeEquivalentTo(testCase.Expected);
+        if (testCase.Throws_Be)
+        {
+            action
+                .Should()
+                .Throw<Xunit.Sdk.XunitException>();
+        }
+        else
+        {
+            action();
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(GetTestCases))]
+    public void TestJsonEquivalent(TestCase testCase)
+    {
+        var action = () => testCase.Actual.Should().BeJsonEquivalentTo(testCase.Expected);
+        if (testCase.Throws_BeJsonEquivalentTo)
+        {
+            action
+                .Should()
+                .Throw<Xunit.Sdk.XunitException>();
+        }
+        else
+        {
+            action();
+        }
+    }
+}
 
 
 public class CurrentAlternativeTests
