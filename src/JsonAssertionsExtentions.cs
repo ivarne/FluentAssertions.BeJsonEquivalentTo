@@ -18,7 +18,7 @@ public static class FluentAssertionsExtentions
         }
         else
         {
-            throw new NotSupportedException(); // Not implemented yet
+            result = JsonLooseOrderComparison.IsJsonTokenEquivalent(actual.Subject, expected, options);
         }
 
         if (result is not null)

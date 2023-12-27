@@ -10,38 +10,83 @@ public class TheoryTests
         public required bool Throws_Be { get; set; }
         public required bool Throws_BeEquivalentTo { get; set; }
         public required bool Throws_BeJsonEquivalentTo { get; set; }
+        public required bool Throws_BeJsonEquivalentToIgnoreOrder { get; set; }
 
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 
-    public static IEnumerable<object[]> GetTestCases => new[]
+    public static IEnumerable<object[]> GetTestCases => new TestCase[]
     {
-        new[]
+        new()
         {
-            new TestCase
-            {
-                Name = "TestBinaryEqual",
-                Actual =
-                    """{"name":"John", "number": 3.141592, "emptyArray":[], "array":[null, 1, 3.141592, "", "string", {}, {"t":null}]}""",
-                Expected =
-                    """{"name":"John", "number": 3.141592, "emptyArray":[], "array":[null, 1, 3.141592, "", "string", {}, {"t":null}]}""",
-                Throws_Be = false,
-                Throws_BeEquivalentTo = false,
-                Throws_BeJsonEquivalentTo = false
-            },
+            Name = "TestBinaryEqual",
+            Actual =
+                """{"name":"John", "number": 3.141592, "emptyArray":[], "array":[null, 1, 3.141592, "", "string", {}, {"t":null}]}""",
+            Expected =
+                """{"name":"John", "number": 3.141592, "emptyArray":[], "array":[null, 1, 3.141592, "", "string", {}, {"t":null}]}""",
+            Throws_Be = false,
+            Throws_BeEquivalentTo = false,
+            Throws_BeJsonEquivalentTo = false,
+            Throws_BeJsonEquivalentToIgnoreOrder = false,
         },
-        new[]
+        new()
         {
-            new TestCase
-            {
-                Name = "TestEncodingIndiferenceInValue",
-                Actual = """{"name":"O\u0027Reilly\uD83D\uDCDA"}""",
-                Expected = """{"name":"O'Reilly📚"}""",
-                Throws_Be = true,
-                Throws_BeEquivalentTo = true,
-                Throws_BeJsonEquivalentTo = false
-            },
+            Name = "TestEncodingDifferenceInValue",
+            Actual = """{"name":"O\u0027Reilly\uD83D\uDCDA"}""",
+            Expected = """{"name":"O'Reilly📚"}""",
+            Throws_Be = true,
+            Throws_BeEquivalentTo = true,
+            Throws_BeJsonEquivalentTo = false,
+            Throws_BeJsonEquivalentToIgnoreOrder = false,
         },
-    };
+        new()
+        {
+            Name = "TestEncodingDifferenceInKey",
+            Actual = """{"name of \uD83D\uDCDA":"Book name"}""",
+            Expected = """{"name of 📚":"Book name"}""",
+            Throws_Be = true,
+            Throws_BeEquivalentTo = true,
+            Throws_BeJsonEquivalentTo = false,
+            Throws_BeJsonEquivalentToIgnoreOrder = false,
+        },
+        new()
+        {
+            Name = "TestTrailingComma",
+            Actual = """{"a":[1,],}""",
+            Expected = """{"a":[1]}""",
+            Throws_Be = true,
+            Throws_BeEquivalentTo = true,
+            Throws_BeJsonEquivalentTo = false,
+            Throws_BeJsonEquivalentToIgnoreOrder = false,
+        },
+        new()
+        {
+            Name= "Test2FormattedWithFormatting",
+            Actual = """{"name":"John"}""",
+            Expected = """
+                       {
+                          "name":"John"
+                       }
+                       """,
+            Throws_Be = true,
+            Throws_BeEquivalentTo = true,
+            Throws_BeJsonEquivalentTo = false,
+            Throws_BeJsonEquivalentToIgnoreOrder = false,
+        },
+        new()
+        {
+            Name = "testDifferentPropertyOrder",
+            Actual = """{"name":"John", "number": 3.141592, "emptyArray":[], "array":[null, 1, 3.141592, "", "string", {}, {"t":null}]}""",
+            Expected = """{"number": 3.141592, "name":"John", "emptyArray":[], "array":[null, 1, 3.141592, "", "string", {}, {"t":null}]}""",
+            Throws_Be = true,
+            Throws_BeEquivalentTo = true,
+            Throws_BeJsonEquivalentTo = true,
+            Throws_BeJsonEquivalentToIgnoreOrder = false,
+        }
+    }.Select(x => new []{x});
 
     [Theory]
     [MemberData(nameof(GetTestCases))]
@@ -81,8 +126,37 @@ public class TheoryTests
     [MemberData(nameof(GetTestCases))]
     public void TestJsonEquivalent(TestCase testCase)
     {
-        var action = () => testCase.Actual.Should().BeJsonEquivalentTo(testCase.Expected);
+        var action = () => testCase.Actual.Should().BeJsonEquivalentTo(
+            testCase.Expected,
+            new JsonComparatorOptions()
+            {
+                CommentHandling = JsonCommentHandling.Allow,
+                AllowTrailingCommas = true,
+                LooseObjectOrderComparison = false
+            });
         if (testCase.Throws_BeJsonEquivalentTo)
+        {
+            action
+                .Should()
+                .Throw<Xunit.Sdk.XunitException>();
+        }
+        else
+        {
+            action();
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(GetTestCases))]
+    public void TestJsonEquivalentIgnoreOrder(TestCase testCase)
+    {
+        var action = () => testCase.Actual.Should().BeJsonEquivalentTo(testCase.Expected, new JsonComparatorOptions()
+        {
+            CommentHandling = JsonCommentHandling.Allow,
+            AllowTrailingCommas = true,
+            LooseObjectOrderComparison = true
+        });
+        if (testCase.Throws_BeJsonEquivalentToIgnoreOrder)
         {
             action
                 .Should()

@@ -88,4 +88,42 @@ public class TestJsonCompare
         var t2 = """{"name": "Joe Doe", "age": 15488}// a comment""";
         t1.Should().BeJsonEquivalentTo(t2, new JsonComparatorOptions() { CommentHandling = JsonCommentHandling.Skip });
     }
+
+    [Fact]
+    public void TestDifferentOrder()
+    {
+        var t1 = """{"name": "Joe Doe", "age": 15488}""";
+        var t2 = """{"age": 15488, "name": "Joe Doe"}""";
+        t1.Should().BeJsonEquivalentTo(t2, new JsonComparatorOptions()
+        {
+            CommentHandling = JsonCommentHandling.Skip,
+            LooseObjectOrderComparison = true,
+        });
+    }
+
+    [Fact]
+    public void TestDifferentOrder2()
+    {
+        var actual =
+            """{"name":"John", "number": 3.141592, "emptyArray":[], "array":[null, 1, 3.141592, "", "string", {}, {"t":null}]}""";
+        var expected =
+            """{"number": 3.141592, "name":"John", "emptyArray":[], "array":[null, 1, 3.141592, "", "string", {}, {"t":null}]}""";
+        actual.Should().BeJsonEquivalentTo(expected, new JsonComparatorOptions()
+        {
+            CommentHandling = JsonCommentHandling.Skip,
+            LooseObjectOrderComparison = true,
+        });
+    }
+
+    [Fact]
+    public void TestTrailingCommaLoose()
+    {
+        var actual = """{"a":[1,],}""";
+        var expected = """{"a":[1]}""";
+        actual.Should().BeJsonEquivalentTo(expected, new JsonComparatorOptions()
+        {
+            AllowTrailingCommas = true,
+            LooseObjectOrderComparison = true,
+        });
+    }
 }
