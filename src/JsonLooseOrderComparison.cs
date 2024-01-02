@@ -118,7 +118,7 @@ internal static class JsonLooseOrderComparison
         Debug.Assert(state.Actual.TokenType == JsonTokenType.StartObject);
         Debug.Assert(state.Expected.TokenType == JsonTokenType.StartObject);
 
-        var expectedJsonCache = state.Options.LooseObjectOrderComparison? new Dictionary<string, int>(): null;
+        var expectedJsonCache = state.Options.LooseObjectOrderComparison ? new Dictionary<string, int>() : null;
 
         state.Actual.Read();
         state.Expected.Read();
@@ -173,7 +173,7 @@ internal static class JsonLooseOrderComparison
                     var error = CompareToken(ref newState);
                     if (error is not null) return error;
                     // synchronize the actual reader with the new state
-                    while(newState.Actual.TokenStartIndex > state.Actual.TokenStartIndex)
+                    while (newState.Actual.TokenStartIndex > state.Actual.TokenStartIndex)
                         state.Actual.Read();
                     // read the next token
                     state.Actual.Read();

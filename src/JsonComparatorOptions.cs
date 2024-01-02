@@ -25,7 +25,7 @@ public readonly struct JsonComparatorOptions : IEquatable<JsonComparatorOptions>
         MaxDepth = options.MaxDepth,
     };
 
-// Analyzers require all structs to implement equality.
+    // Analyzers require all structs to implement equality.
     public override bool Equals(object? obj)
     {
         return obj is JsonComparatorOptions other && Equals(other);

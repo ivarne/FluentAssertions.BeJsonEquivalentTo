@@ -71,7 +71,7 @@ public class FuzzerTests
         }).Should().BeNull();
     }
 
-    [Fact(Skip="Takes way too long")]
+    [Fact(Skip = "Takes way too long")]
     public void TestLotsOfConditions()
     {
         foreach (var i in Enumerable.Range(0, 100000))

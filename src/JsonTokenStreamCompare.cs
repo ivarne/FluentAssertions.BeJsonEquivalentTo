@@ -98,7 +98,7 @@ internal static class JsonTokenStreamCompare
                 {message}
                 {GetRelevantErrorPart((int)actual.TokenStartIndex, actualBytes)} (diff at index {actualCharacterPositionError})
                 {GetRelevantErrorPart((int)expected.TokenStartIndex, expectedBytes)} (diff at index {expectedCharacterPositionError})
-                {"^", CharCountBeforeError + 1}
+                {"^",CharCountBeforeError + 1}
 
                 """;
     }
