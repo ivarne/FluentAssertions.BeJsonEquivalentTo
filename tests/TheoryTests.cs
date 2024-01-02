@@ -64,7 +64,7 @@ public class TheoryTests
         },
         new()
         {
-            Name= "Test2FormattedWithFormatting",
+            Name = "Test2FormattedWithFormatting",
             Actual = """{"name":"John"}""",
             Expected = """
                        {
@@ -79,14 +79,16 @@ public class TheoryTests
         new()
         {
             Name = "testDifferentPropertyOrder",
-            Actual = """{"name":"John", "number": 3.141592, "emptyArray":[], "array":[null, 1, 3.141592, "", "string", {}, {"t":null}]}""",
-            Expected = """{"number": 3.141592, "name":"John", "emptyArray":[], "array":[null, 1, 3.141592, "", "string", {}, {"t":null}]}""",
+            Actual =
+                """{"name":"John", "number": 3.141592, "emptyArray":[], "array":[null, 1, 3.141592, "", "string", {}, {"t":null}]}""",
+            Expected =
+                """{"number": 3.141592, "name":"John", "emptyArray":[], "array":[null, 1, 3.141592, "", "string", {}, {"t":null}]}""",
             Throws_Be = true,
             Throws_BeEquivalentTo = true,
             Throws_BeJsonEquivalentTo = true,
             Throws_BeJsonEquivalentToIgnoreOrder = false,
         }
-    }.Select(x => new []{x});
+    }.Select(x => new[] { x });
 
     [Theory]
     [MemberData(nameof(GetTestCases))]
@@ -143,6 +145,27 @@ public class TheoryTests
         else
         {
             action();
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(GetTestCases))]
+    public void TestJsonIgnorOrder_DontIgnoreOrder(TestCase testCase)
+    {
+        var result = JsonLooseOrderComparison.IsJsonTokenEquivalent(testCase.Actual, testCase.Expected,
+            new JsonComparatorOptions()
+            {
+                CommentHandling = JsonCommentHandling.Skip,
+                AllowTrailingCommas = true,
+                LooseObjectOrderComparison = false
+            });
+        if (testCase.Throws_BeJsonEquivalentTo)
+        {
+            result.Should().NotBeNull();
+        }
+        else
+        {
+            result.Should().BeNull();
         }
     }
 

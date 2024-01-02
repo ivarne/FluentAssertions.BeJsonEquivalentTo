@@ -53,7 +53,7 @@ internal static class JsonTokenStreamCompare
 
                 // compare the value of tokens with value
                 case JsonTokenType.PropertyName:
-                    if (!actual.ValueTextEquals(expected.ValueSpan))
+                    if (!actual.ValueTextEquals(expected.GetString()))
                     {
                         return CreateErrorMessage("PropertyName mismatch (validate strict order)", ref actual, actualBytes, ref expected,
                             expectedBytes);
@@ -61,7 +61,7 @@ internal static class JsonTokenStreamCompare
 
                     break;
                 case JsonTokenType.String:
-                    if (!actual.ValueTextEquals(expected.ValueSpan))
+                    if (!actual.ValueTextEquals(expected.GetString()))
                     {
                         return CreateErrorMessage("string mismatch", ref actual, actualBytes, ref expected, expectedBytes);
                     }

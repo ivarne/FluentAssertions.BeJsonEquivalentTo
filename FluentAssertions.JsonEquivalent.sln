@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentAssertions.JsonEquivalent", "src\FluentAssertions.JsonEquivalent.csproj", "{02F6376E-166F-464D-9541-DFC078EA2A48}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentAssertions.JsonEquivalentTests", "tests\FluentAssertions.JsonEquivalentTests.csproj", "{94F23479-65E1-4674-9E98-F5690C7602D8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentAssertions.JsonEquivalent.Tests", "tests\FluentAssertions.JsonEquivalent.Tests.csproj", "{94F23479-65E1-4674-9E98-F5690C7602D8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

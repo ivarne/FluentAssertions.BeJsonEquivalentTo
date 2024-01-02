@@ -28,6 +28,7 @@
     <Using Include="System.Text.Json.Serialization" />
     <Using Include="FluentAssertions" />
     <Using Include="Xunit" />
+    <Using Include="Xunit.Abstractions" />
   </ItemGroup>
 
   <ItemGroup>

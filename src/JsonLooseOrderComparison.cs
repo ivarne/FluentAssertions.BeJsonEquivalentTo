@@ -81,14 +81,14 @@ internal static class JsonLooseOrderComparison
 
             // compare the value of tokens with value
             case JsonTokenType.PropertyName:
-                if (!state.Actual.ValueTextEquals(state.Expected.ValueSpan))
+                if (!state.Actual.ValueTextEquals(state.Expected.GetString()))
                 {
                     return JsonCompareUtils.CreateErrorMessage("PropertyName mismatch (validate strict order)", ref state);
                 }
 
                 break;
             case JsonTokenType.String:
-                if (!state.Actual.ValueTextEquals(state.Expected.ValueSpan))
+                if (!state.Actual.ValueTextEquals(state.Expected.GetString()))
                 {
                     return JsonCompareUtils.CreateErrorMessage("string mismatch", ref state);
                 }
@@ -126,7 +126,7 @@ internal static class JsonLooseOrderComparison
                state.Expected.TokenType == JsonTokenType.PropertyName)
         {
             // Simple compare if properties are equal
-            if (state.Expected.ValueTextEquals(state.Actual.ValueSpan))
+            if (state.Expected.ValueTextEquals(state.Actual.GetString()))
             {
                 var error = CompareProperty(ref state);
                 if (error is not null) return error;
@@ -200,7 +200,7 @@ internal static class JsonLooseOrderComparison
     {
         Debug.Assert(state.Expected.TokenType == JsonTokenType.PropertyName);
         Debug.Assert(state.Actual.TokenType == JsonTokenType.PropertyName);
-        Debug.Assert(state.Expected.ValueTextEquals(state.Actual.ValueSpan)); // we have already compared the property names
+        Debug.Assert(state.Expected.ValueTextEquals(state.Actual.GetString())); // we have already compared the property names
 
         state.Expected.Read();
         state.Actual.Read();

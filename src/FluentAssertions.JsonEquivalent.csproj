@@ -15,11 +15,13 @@
 
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="../README.md" Pack="true" PackagePath="" />
+      <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+        <_Parameter1>FluentAssertions.JsonEquivalent.Tests</_Parameter1>
+      </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>
