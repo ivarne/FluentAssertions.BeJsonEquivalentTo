@@ -6,13 +6,16 @@ This package provides a new way to compare strings that takes JSON semantics int
 With options you can loosen the comparison even more
 
 * **IgnorePropertyOrder**: make actual `{"a":1, "b":2}` equal expected `{"b":2, "a":1}`
-* **IgnoreExtraProperties**: make actual `{"a":1, "b":2}` equal expected `{"a":1}`
-* **IgnoreArrayOrder**: make actual `[1,2,3]` equal expected `[3,2,1]`
 
 You can also pass options to customize the `Utf8JsonReader` settings
 * **CommentHandeling**: `Skip`, `Allow`, `Error`.
 * **MaxDepth**: Avoid infinate recursion (default 64).
 * **AllowTrailingComma**: Allow trailing comma in objects and arrays.
+
+(Extra options that might be implemented in final version)
+* **IgnoreExtraProperties**: make actual `{"a":1, "b":2}` equal expected `{"a":1}`
+* **IgnoreArrayOrder**: make actual `[1,2,3]` equal expected `[3,2,1]`
+* **IgnoreNull**: make actual `{"a": null}` equal expected `{"b": null}`
 
 ### Usage
 A typical usage will be something like (using c# 11/dotnet 7 raw string literals)
@@ -37,12 +40,16 @@ Lots of communication and storage in modern apps depends on the json format, thu
 * Sometimes the order of json properties isn't stable, and test assertions needs to accept that to reduce maintanance and allow cross platform tests.
 * Json support unicode escape sequences in strings `"\u00a3"` and for most parsers they are equivalent (unless you paste json in a `<script>` tag in html and get script injection when a json string includes an `</script>` end tag)
 
+
+#### Alternatives
 The obvious alternative would be to parse the json to C# classes and use `BeEquivalentTo`, but that has its own problems.
 
 * It's dependent on parser settings wich might be different from the actual consumer of the json. (case sensitivity on properties, enums, dates ...)
 * Some C# specific behaviour in `BeEquivalentTo` does not make sense for JSON. (Different type system).
 * You need to have a C# class that is in sync with the json you test. You can usually reuse the existing model, but that means your tests change unintentionally when you change the model.
 
+
+Another alternative would be to provide actually working assertions on `JsonDocument`/`JsonElement` or `JsonNode` for structural eqvivalency and assertions on json paths. JsonEquivalentTo() should be more performant, but probably not enough to matter for tests.
 
 
 ### Customization API
